@@ -4,7 +4,7 @@ from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.lang import Builder
-
+from kivy.uix.screenmanager import ScreenManager, Screen  # Imports the Kivy Screen manager and Kivys Screen class
 import os
 
 Builder.load_string("""
@@ -14,10 +14,11 @@ Builder.load_string("""
 
 <Default_Label@Label>:
     color: 0,0,0,1
-    
+
+      
     
 <Main>:
-
+    id: main_screen
     canvas.before:
         Color:
             rgba: 1, 1, 1, 1
@@ -39,14 +40,15 @@ Builder.load_string("""
        
     BoxLayout:
         orientation: "horizontal"
-        id: main
         Default_Label:
             text: "Main Report"
         TextInput:
-            on_text: ""
+            id: entry
+            
+                     
         Default_Button
             text: "Browse"
-            on_release: main.open(filechooser.path, filechooser.selection)
+            on_release:  root.manager.current = 'file_chooser'
             
     BoxLayout:
         orientation: "horizontal"
@@ -56,7 +58,7 @@ Builder.load_string("""
             on_text: ""
         Default_Button
             text: "Browse"
-            on_release: main.open(filechooser.path, filechooser.selection)
+            on_release: root.manager.current = 'file_chooser'
             
     BoxLayout:
         orientation: "horizontal"
@@ -66,33 +68,44 @@ Builder.load_string("""
         Default_Button
             text: "Quit"
             on_release: main.open(filechooser.path, filechooser.selection)
-            
+   
         
-<FileChooser>:        
+<FileChooser>:
+    id: file_chooser
     FileChooserListView:
-        id: filechooser
-        on_selection: my_widget.selected(filechooser.selection)
+        on_selection: root.manager.current = 'main_screen'
+        on_selection: root.selected()
+      
+       
    
 """)
 
 
-class Main(BoxLayout, GridLayout):
+class Main(BoxLayout, Screen):
+    report_one = ""
+    print(report_one)
+
     def open(self, path, filename):
         with open(os.path.join(path, filename[0])) as f:
             print(f.read())
 
-    def selected(self, filename):
-        print ("selected: %s" % filename[0])
+class FileChooser(BoxLayout, Screen):
+    def selected(self):
+        self.ids.my_widget.ids.my_label.text = ""
+
+
+sm = ScreenManager()
+sm.add_widget(Main(name='main_screen'))
+sm.add_widget(FileChooser(name='file_chooser'))
 
 
 class MyApp(App):
-
 
     def build(self):
         from kivy.core.window import Window
         Window.size = (450, 100)
         self.title = 'Report Manager'
-        return Main()
+        return sm
 
 if __name__ == '__main__':
     MyApp().run()
